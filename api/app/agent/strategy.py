@@ -14,6 +14,20 @@ from dataclasses import dataclass, field
 
 from app.models.enums import FailureCode, MessageTone
 
+# Baseline classification confidence per code (the live LLM returns its own;
+# this is the deterministic fallback used by the seed and the offline engine).
+BASELINE_CONFIDENCE: dict[FailureCode, float] = {
+    FailureCode.INSUFFICIENT_FUNDS: 0.96,
+    FailureCode.EXPIRED_CARD: 0.99,
+    FailureCode.DO_NOT_HONOR: 0.72,
+    FailureCode.CARD_DECLINED: 0.78,
+    FailureCode.LOST_OR_STOLEN: 0.97,
+    FailureCode.AUTHENTICATION_REQUIRED: 0.93,
+    FailureCode.PROCESSING_ERROR: 0.88,
+    FailureCode.FRAUD_SUSPECTED: 0.94,
+}
+
+
 # Default tone escalation ladder, trimmed per playbook length.
 TONE_LADDER: list[MessageTone] = [
     MessageTone.FRIENDLY_REMINDER,
