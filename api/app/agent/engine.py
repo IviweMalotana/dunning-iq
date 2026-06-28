@@ -35,6 +35,7 @@ from app.models.enums import (
     FailureCode,
     MessageChannel,
     MessageStatus,
+    MessageTone,
     SubscriptionStatus,
 )
 from app.seed import narrative
@@ -43,13 +44,21 @@ from app.seed.narrative import CaseContext
 
 @dataclass
 class Decision:
-    """The reasoning content for one decision — the seam M3's LLM fills."""
+    """The reasoning content for one decision — the seam the live LLM fills.
+
+    Classification + strategy reasoning is always present; the message fields are
+    populated only when the playbook drafts a customer message (i.e. ``tone`` was
+    supplied — escalate-immediately playbooks don't message).
+    """
 
     failure_code: FailureCode
     confidence: float
     classification_reasoning: str
     strategy_reasoning: str
     source: str  # "replay" | "claude"
+    message_subject: str | None = None
+    message_body: str | None = None
+    message_reasoning: str | None = None
 
 
 def _now() -> datetime:
@@ -72,15 +81,36 @@ class DecisionEngine:
 
     source = "replay"
 
-    def decide(self, ctx: CaseContext, pb: Playbook) -> Decision:
-        """Produce the reasoning for a new case. Overridden by the live engine."""
-        confidence = strategy.BASELINE_CONFIDENCE[ctx.failure_code]
+    def analyze(
+        self,
+        ctx: CaseContext,
+        pb: Playbook,
+        *,
+        tone: MessageTone | None = None,
+        next_date: str | None = None,
+        brand_voice: str | None = None,
+    ) -> Decision:
+        """Produce the opening decision for a case — the single LLM seam.
+
+        Returns classification + strategy reasoning, plus a drafted message when
+        ``tone`` is given. The deterministic base draws from the narrative
+        generator; :class:`LiveDecisionEngine` overrides this with a Claude call.
+        """
+        subject = body = msg_reasoning = None
+        if tone is not None:
+            subject, body = narrative.draft_message(
+                ctx, tone, next_date if pb.recoverable else None
+            )
+            msg_reasoning = narrative.message_reasoning(ctx, tone, 1)
         return Decision(
             failure_code=ctx.failure_code,
-            confidence=confidence,
+            confidence=strategy.BASELINE_CONFIDENCE[ctx.failure_code],
             classification_reasoning=narrative.classification_reasoning(ctx, pb),
             strategy_reasoning=narrative.strategy_reasoning(ctx, pb),
             source=self.source,
+            message_subject=subject,
+            message_body=body,
+            message_reasoning=msg_reasoning,
         )
 
     # ── Public API ────────────────────────────────────────────────────────────
@@ -101,8 +131,20 @@ class DecisionEngine:
             plan_name=sub.plan_name if sub else "subscription",
             failure_code=code,
         )
-        decision = self.decide(ctx, pb)
         opened = _now()
+
+        # Decide tone/timing for the step-1 message before consulting the agent,
+        # so the live engine can draft the message in the same call.
+        if pb.max_attempts:
+            gap = pb.backoff_days[0] if pb.backoff_days else 3
+            tone: MessageTone | None = pb.tone_for_step(1)
+            next_date: str | None = (opened + timedelta(days=gap)).strftime("%b %-d")
+        else:
+            gap, tone, next_date = 0, None, None
+
+        decision = self.analyze(
+            ctx, pb, tone=tone, next_date=next_date, brand_voice=policy.brand_voice
+        )
 
         case = DunningCase(
             customer_id=customer.id,
@@ -165,22 +207,18 @@ class DecisionEngine:
             reasoning=decision.strategy_reasoning, at=opened + timedelta(seconds=5),
             detail=case.plan,
         )
-        gap = pb.backoff_days[0] if pb.backoff_days else 3
-        tone = pb.tone_for_step(1)
-        next_date = (opened + timedelta(days=gap)).strftime("%b %-d")
-        subject, body = narrative.draft_message(ctx, tone, next_date if pb.recoverable else None)
         msg = Message(
             case_id=case.id, customer_id=customer.id, channel=MessageChannel.EMAIL, tone=tone,
-            step_number=1, subject=subject, body=body,
+            step_number=1, subject=decision.message_subject, body=decision.message_body or "",
             status=MessageStatus.SENT if policy.auto_send else MessageStatus.DRAFT,
-            model=f"{decision.source}", created_at=opened + timedelta(seconds=6),
+            model=decision.source, created_at=opened + timedelta(seconds=6),
             sent_at=opened + timedelta(seconds=7) if policy.auto_send else None,
         )
         db.add(msg)
         db.flush()
         self._add_event(
             db, case, EventType.MESSAGE_DRAFTED, f"Drafted {tone.label.lower()} (step 1)",
-            reasoning=narrative.message_reasoning(ctx, tone, 1), step=1,
+            reasoning=decision.message_reasoning, step=1,
             message_id=msg.id, at=opened + timedelta(seconds=6),
         )
         case.current_step = 1
@@ -229,5 +267,15 @@ class DecisionEngine:
 
 
 def get_engine() -> DecisionEngine:
-    """Return the active engine. M3 returns the live Claude engine when keyed."""
+    """Return the active engine: live Claude when keyed, deterministic otherwise.
+
+    The live engine still falls back to the deterministic path on any API error,
+    so a missing key or a transient outage never drops a webhook on the floor.
+    """
+    from app.core.config import settings
+
+    if settings.agent_live_enabled:
+        from app.agent.llm import LiveDecisionEngine
+
+        return LiveDecisionEngine()
     return DecisionEngine()

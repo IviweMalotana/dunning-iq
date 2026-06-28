@@ -156,3 +156,6 @@ api/dunning_iq.db
 
 # uv
 .uv/
+
+# Agent LLM decision cache (regenerated on demand)
+api/.agent_cache/

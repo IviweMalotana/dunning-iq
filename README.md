@@ -93,6 +93,32 @@ Fire a fresh batch of failures at the running API:
 make simulate
 ```
 
+## The agent (live vs. deterministic)
+
+The decision engine sits behind a single seam (`app/agent/engine.py → analyze()`):
+
+- **Live** — with `ANTHROPIC_API_KEY` set, every *new* failed-payment event is
+  classified, planned, and drafted by **Claude (`claude-opus-4-8`)** via the
+  official SDK with structured output. Results are cached to disk, so re-runs are
+  free and offline.
+- **Deterministic fallback** — with no key (or on any transient API error), the
+  same seam produces the decision from a hand-written billing playbook, so the
+  demo never breaks and webhooks are never dropped. Each decision records whether
+  it was `claude` or `replay`, surfaced in the audit trail.
+
+Either way, the **hard billing guardrails** (never retry a stolen card, escalate
+fraud immediately, payday-aligned backoff) live in `app/agent/strategy.py` and
+always apply — the LLM supplies the *reasoning and the customer prose*, not the
+authority to do something a billing operator would veto.
+
+```bash
+make agent-demo                 # see the agent reason about a sample failure
+make agent-demo CODE=expired_card
+```
+
+The seeded demo history is intentionally **deterministic and reproducible**; the
+live agent runs on new events you fire with `make simulate`.
+
 ## Environment variables
 
 | Var                        | Where      | Purpose                                                        |

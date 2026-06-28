@@ -41,6 +41,9 @@ dev-web: ## Run the Next.js frontend (port 3000)
 simulate: ## Fire a batch of realistic failed-payment webhooks at the running API
 	$(API) python -m app.seed.simulate
 
+agent-demo: ## Run the agent on a sample failure; shows live (keyed) vs deterministic
+	$(API) python -m app.agent.demo $(CODE)
+
 lint: ## Lint api (ruff) and web (eslint)
 	cd api && uv run ruff check app
 	cd web && npm run lint
