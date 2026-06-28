@@ -126,3 +126,66 @@ class MessageEdit(BaseModel):
 class CaseOverride(BaseModel):
     action: Literal["pause", "resume", "escalate", "resolve", "write_off"]
     note: str | None = None
+
+
+# ── policy / settings ─────────────────────────────────────────────────────────
+
+class PolicyOut(BaseModel):
+    id: str
+    name: str
+    is_active: bool
+    max_retries: int
+    backoff_days: list[int]
+    retry_window_days: int
+    escalate_after_step: int
+    base_tone: str
+    brand_voice: str
+    auto_send: bool
+    updated_at: datetime
+
+
+class PolicyUpdate(BaseModel):
+    name: str | None = None
+    max_retries: int | None = None
+    backoff_days: list[int] | None = None
+    retry_window_days: int | None = None
+    escalate_after_step: int | None = None
+    base_tone: str | None = None
+    brand_voice: str | None = None
+    auto_send: bool | None = None
+
+
+class PolicyPreviewRequest(BaseModel):
+    """Proposed policy values to simulate against a sample failure (no save)."""
+
+    failure_code: str = "insufficient_funds"
+    max_retries: int | None = None
+    backoff_days: list[int] | None = None
+    base_tone: str | None = None
+    brand_voice: str | None = None
+    auto_send: bool | None = None
+
+
+class PreviewMessage(BaseModel):
+    tone: str
+    tone_label: str
+    subject: str | None
+    body: str
+
+
+class PolicyPreview(BaseModel):
+    failure_code: str
+    failure_label: str
+    recoverable: bool
+    needs_customer_action: bool
+    max_attempts: int
+    backoff_days: list[int]
+    escalate_after: int
+    escalation_target: str | None
+    summary: str
+    confidence: float
+    classification_reasoning: str
+    strategy_reasoning: str
+    message: PreviewMessage | None
+    auto_send: bool
+    decided_by: str

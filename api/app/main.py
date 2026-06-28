@@ -35,9 +35,10 @@ def health() -> dict[str, object]:
 
 
 # Routers are mounted as milestones land.
-from app.api import cases, dashboard, meta, webhooks  # noqa: E402
+from app.api import cases, dashboard, meta, policy, webhooks  # noqa: E402
 
 app.include_router(meta.router)
 app.include_router(webhooks.router)
 app.include_router(dashboard.router)
 app.include_router(cases.router)
+app.include_router(policy.router)

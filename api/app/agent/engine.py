@@ -67,6 +67,13 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+def _resolve_tone(value: str | None) -> MessageTone | None:
+    try:
+        return MessageTone(value) if value else None
+    except ValueError:
+        return None
+
+
 def get_active_policy(db: Session) -> Policy:
     policy = db.scalars(select(Policy).where(Policy.is_active.is_(True))).first()
     if policy is None:
@@ -134,10 +141,11 @@ class DecisionEngine:
         opened = _now()
 
         # Decide tone/timing for the step-1 message before consulting the agent,
-        # so the live engine can draft the message in the same call.
+        # so the live engine can draft the message in the same call. The policy's
+        # base tone is the operator's lever — it overrides the playbook default.
         if pb.max_attempts:
             gap = pb.backoff_days[0] if pb.backoff_days else 3
-            tone: MessageTone | None = pb.tone_for_step(1)
+            tone: MessageTone | None = _resolve_tone(policy.base_tone) or pb.tone_for_step(1)
             next_date: str | None = (opened + timedelta(days=gap)).strftime("%b %-d")
         else:
             gap, tone, next_date = 0, None, None

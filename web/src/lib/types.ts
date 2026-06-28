@@ -109,6 +109,64 @@ export interface CaseDetail extends QueueItem {
   messages: CaseMessage[];
 }
 
+export interface Policy {
+  id: string;
+  name: string;
+  is_active: boolean;
+  max_retries: number;
+  backoff_days: number[];
+  retry_window_days: number;
+  escalate_after_step: number;
+  base_tone: string;
+  brand_voice: string;
+  auto_send: boolean;
+  updated_at: string;
+}
+
+export interface PreviewMessage {
+  tone: string;
+  tone_label: string;
+  subject: string | null;
+  body: string;
+}
+
+export interface PolicyPreview {
+  failure_code: string;
+  failure_label: string;
+  recoverable: boolean;
+  needs_customer_action: boolean;
+  max_attempts: number;
+  backoff_days: number[];
+  escalate_after: number;
+  escalation_target: string | null;
+  summary: string;
+  confidence: number;
+  classification_reasoning: string;
+  strategy_reasoning: string;
+  message: PreviewMessage | null;
+  auto_send: boolean;
+  decided_by: string;
+}
+
+export const TONES: { value: string; label: string }[] = [
+  { value: "friendly_reminder", label: "Friendly reminder" },
+  { value: "firm_reminder", label: "Firm reminder" },
+  { value: "urgent", label: "Urgent" },
+  { value: "final_notice", label: "Final notice" },
+  { value: "credit_control", label: "Credit control hand-off" },
+];
+
+export const FAILURE_CODES: { value: string; label: string }[] = [
+  { value: "insufficient_funds", label: "Insufficient funds" },
+  { value: "expired_card", label: "Expired card" },
+  { value: "do_not_honor", label: "Do not honor" },
+  { value: "card_declined", label: "Card declined" },
+  { value: "authentication_required", label: "Authentication required" },
+  { value: "processing_error", label: "Technical / processing error" },
+  { value: "lost_or_stolen_card", label: "Lost or stolen card" },
+  { value: "fraud_suspected", label: "Suspected fraud" },
+];
+
 export const STATUS_META: Record<
   CaseStatus,
   { label: string; tone: "success" | "info" | "warning" | "danger" | "neutral" }
