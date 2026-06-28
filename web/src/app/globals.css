@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/*
+  Dunning IQ design system — calm, dense, operator-grade.
+  Reference craft: Stripe Dashboard. Restrained palette, one accent (indigo),
+  subtle borders over heavy shadows, a real type scale. Light mode first.
+*/
+
+:root {
+  /* Surfaces */
+  --canvas: #f5f6f8;          /* app shell background */
+  --surface: #ffffff;         /* cards, tables */
+  --surface-subtle: #fafbfc;  /* zebra rows, inset panels */
+  --surface-hover: #f5f6f8;
+
+  /* Borders */
+  --border: #e6e8eb;
+  --border-strong: #d5d9df;
+
+  /* Ink (text) */
+  --ink: #1a1f36;             /* primary */
+  --ink-muted: #5b6472;       /* secondary / labels */
+  --ink-subtle: #8a93a3;      /* tertiary / hints */
+  --ink-invert: #ffffff;
+
+  /* Accent — indigo / blurple */
+  --accent: #635bff;
+  --accent-hover: #5249e0;
+  --accent-soft: #efeefe;     /* tinted background */
+  --accent-ink: #4b45c6;      /* accent text on light */
+
+  /* Status — soft bg + readable ink, Stripe-pill style */
+  --success: #1a7f53;
+  --success-soft: #e3f6ed;
+  --warning: #9a6700;
+  --warning-soft: #fdf3d8;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --info: #1f6fb2;
+  --info-soft: #e6f1fb;
+  --neutral: #5b6472;
+  --neutral-soft: #eef0f3;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-invert: var(--ink-invert);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-neutral: var(--neutral);
+  --color-neutral-soft: var(--neutral-soft);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono-stack), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-card: 10px;
+
+  /* Soft, layered shadows — used sparingly */
+  --shadow-card: 0 1px 2px rgba(26, 31, 54, 0.04), 0 1px 3px rgba(26, 31, 54, 0.06);
+  --shadow-pop: 0 4px 12px rgba(26, 31, 54, 0.10), 0 2px 4px rgba(26, 31, 54, 0.06);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tabular numerals for all financial figures by default. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thin, unobtrusive scrollbars to match the dense aesthetic. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Skeleton shimmer used by loading states. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--neutral-soft);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}

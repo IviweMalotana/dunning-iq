@@ -141,3 +141,18 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# --- Python / FastAPI (api) ---
+__pycache__/
+*.py[cod]
+.venv/
+api/.venv/
+.ruff_cache/
+.pytest_cache/
+
+# Local SQLite demo database
+*.db
+api/dunning_iq.db
+
+# uv
+.uv/
