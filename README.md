@@ -1,5 +1,7 @@
 # Dunning IQ
 
+[![CI](https://github.com/IviweMalotana/dunning-iq/actions/workflows/ci.yml/badge.svg)](https://github.com/IviweMalotana/dunning-iq/actions/workflows/ci.yml)
+
 **An AI agent that handles failed recurring payments end to end** — it classifies
 *why* a payment failed, decides a retry strategy, drafts the customer dunning
 message at the right escalation tone, and knows when to hand off to a human. Every
