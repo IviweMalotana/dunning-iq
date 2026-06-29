@@ -162,7 +162,15 @@ class LiveKimiEngine(LiveLLMEngine):
                 {"role": "user", "content": prompt_with_schema},
             ],
         )
-        raw = resp.choices[0].message.content or ""
+        raw = (resp.choices[0].message.content or "").strip()
+        if not raw:
+            raise ValueError("Kimi returned an empty completion")
+        # Some OpenAI-compatible servers ignore response_format and still wrap
+        # the payload in ```json fences. Strip them defensively before parsing.
+        if raw.startswith("```"):
+            raw = raw.removeprefix("```json").removeprefix("```").strip()
+            if raw.endswith("```"):
+                raw = raw[: -3].strip()
         try:
             data = json.loads(raw)
             parsed = schema.model_validate(data)
