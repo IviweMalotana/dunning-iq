@@ -34,7 +34,11 @@ def main() -> None:
     tone = pb.tone_for_step(1) if pb.max_attempts else None
 
     engine = get_engine()
-    print(f"Engine: {'LIVE (Claude)' if settings.agent_live_enabled else 'deterministic (no key)'}")
+    if settings.agent_live_enabled:
+        label = f"LIVE ({settings.llm_provider} · {settings.active_llm_model})"
+    else:
+        label = "deterministic (no key set)"
+    print(f"Engine: {label}")
     print(f"Failure: {code.label}  |  Amount: {ctx.amount}  |  Customer: {ctx.who}\n")
 
     decision = engine.analyze(ctx, pb, tone=tone, next_date="Jul 2",

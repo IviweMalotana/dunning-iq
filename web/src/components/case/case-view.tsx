@@ -20,7 +20,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { apiSend, swrFetcher } from "@/lib/api";
-import { cn, formatDateTime, formatMoney, timeAgo } from "@/lib/utils";
+import { cn, decidedByLabel, formatDateTime, formatMoney, isLiveLLM, timeAgo } from "@/lib/utils";
 import { CaseDetail, CaseEvent, CaseMessage } from "@/lib/types";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Pill, StatusPill } from "@/components/ui/pill";
@@ -277,8 +277,8 @@ function PlanCard({ c }: { c: CaseDetail }) {
           }
         />
         <Row label="Decided by" value={
-          <Pill tone={c.decided_by === "claude" ? "accent" : "neutral"} className="px-1.5 py-0">
-            {c.decided_by === "claude" ? "Claude (live)" : "replay"}
+          <Pill tone={isLiveLLM(c.decided_by) ? "accent" : "neutral"} className="px-1.5 py-0">
+            {decidedByLabel(c.decided_by)}
           </Pill>
         } />
         <Row

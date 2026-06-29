@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { Search, Sparkles, UserRound } from "lucide-react";
 import { swrFetcher } from "@/lib/api";
-import { cn, formatMoney } from "@/lib/utils";
+import { cn, formatMoney, isLiveLLM } from "@/lib/utils";
 import { QueuePage } from "@/lib/types";
 import { StatusPill } from "@/components/ui/pill";
 import { ErrorState, EmptyState } from "@/components/ui/states";
@@ -164,7 +164,7 @@ export function QueueView() {
                 {/* Reason */}
                 <div className="flex items-center gap-1.5 text-[13px] text-ink-muted">
                   {c.failure_label}
-                  {c.decided_by === "claude" && (
+                  {isLiveLLM(c.decided_by) && (
                     <Sparkles className="h-3 w-3 text-accent" />
                   )}
                 </div>

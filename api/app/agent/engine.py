@@ -275,15 +275,20 @@ class DecisionEngine:
 
 
 def get_engine() -> DecisionEngine:
-    """Return the active engine: live Claude when keyed, deterministic otherwise.
+    """Return the active engine, picked by ``LLM_PROVIDER``.
 
-    The live engine still falls back to the deterministic path on any API error,
-    so a missing key or a transient outage never drops a webhook on the floor.
+    With a key present for the selected provider, the live engine runs (Kimi by
+    default, Claude when ``LLM_PROVIDER=claude``). Without a key, or on any API
+    error, the engine falls back to the deterministic playbook so a webhook is
+    never dropped on the floor.
     """
     from app.core.config import settings
 
-    if settings.agent_live_enabled:
-        from app.agent.llm import LiveDecisionEngine
+    if not settings.agent_live_enabled:
+        return DecisionEngine()
 
-        return LiveDecisionEngine()
-    return DecisionEngine()
+    from app.agent.llm import LiveClaudeEngine, LiveKimiEngine
+
+    if settings.llm_provider == "claude":
+        return LiveClaudeEngine()
+    return LiveKimiEngine()

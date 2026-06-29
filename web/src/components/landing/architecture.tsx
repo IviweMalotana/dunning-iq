@@ -10,7 +10,7 @@ const STAGES = [
   {
     icon: ServerCog,
     title: "Decide",
-    tech: "FastAPI · Claude (Anthropic SDK)",
+    tech: "FastAPI · Kimi (Moonshot, OpenAI-compat)",
     body: "The agent classifies the failure, plans retries, drafts the message, and logs its reasoning.",
   },
   {

@@ -39,11 +39,20 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed origins for the Next.js frontend.
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
-    # --- Anthropic / agent ---
-    anthropic_api_key: str | None = None
-    # Latest, most capable models. Opus for high-stakes reasoning by default.
-    agent_model: str = "claude-opus-4-8"
+    # --- LLM provider ---
+    # The decision engine routes through this provider when its key is set;
+    # otherwise it falls back to the deterministic billing playbook.
+    llm_provider: str = "kimi"            # "kimi" | "claude"
     agent_max_tokens: int = 1024
+
+    # Kimi (Moonshot AI) — OpenAI-compatible API.
+    moonshot_api_key: str | None = None
+    kimi_model: str = "kimi-k2-0711-preview"
+    kimi_base_url: str = "https://api.moonshot.ai/v1"
+
+    # Anthropic Claude — kept available behind LLM_PROVIDER=claude.
+    anthropic_api_key: str | None = None
+    claude_model: str = "claude-opus-4-8"
 
     # --- Webhooks ---
     # Optional shared secret for verifying inbound payment webhooks.
@@ -76,9 +85,22 @@ class Settings(BaseSettings):
         return self.database_url.startswith("sqlite")
 
     @property
+    def active_llm_key(self) -> str | None:
+        """The API key for the selected provider, or None if not configured."""
+        if self.llm_provider == "kimi":
+            return self.moonshot_api_key
+        if self.llm_provider == "claude":
+            return self.anthropic_api_key
+        return None
+
+    @property
+    def active_llm_model(self) -> str:
+        return self.kimi_model if self.llm_provider == "kimi" else self.claude_model
+
+    @property
     def agent_live_enabled(self) -> bool:
-        """True when a real key is present and the live engine should run."""
-        return bool(self.anthropic_api_key)
+        """True when the selected provider has a key and the live engine should run."""
+        return bool(self.active_llm_key)
 
 
 @lru_cache

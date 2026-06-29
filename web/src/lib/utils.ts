@@ -41,6 +41,22 @@ export function timeAgo(iso: string, now: Date = new Date()) {
   return `${months}mo ago`;
 }
 
+/** The set of LLM source values the agent records on a decision. */
+export const LIVE_LLM_SOURCES = new Set(["kimi", "claude"]);
+
+/** True when a decision was produced by a live LLM call (vs deterministic). */
+export function isLiveLLM(source: string | null | undefined): boolean {
+  return !!source && LIVE_LLM_SOURCES.has(source);
+}
+
+/** Display label for a `decided_by` value: "Kimi (live)", "Claude (live)", "replay". */
+export function decidedByLabel(source: string | null | undefined): string {
+  if (!source) return "replay";
+  if (source === "kimi") return "Kimi (live)";
+  if (source === "claude") return "Claude (live)";
+  return source;
+}
+
 /** Absolute, readable date-time. */
 export function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("en-US", {

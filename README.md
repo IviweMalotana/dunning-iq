@@ -38,7 +38,7 @@ can audit exactly why it did what it did.
    event simulator  ──▶   │   /webhooks/payments  ─┐                  │
                           │                        ▼                  │
                           │                 Agent decision engine     │
-                          │            (Anthropic Claude, official SDK)│
+                          │       (Kimi · OpenAI-compatible JSON mode) │
                           │           classify → retry → draft → route │
                           │                        │                  │
                           │                        ▼                  │
@@ -61,7 +61,7 @@ can audit exactly why it did what it did.
 | Frontend | Next.js 15 (App Router) · TypeScript · Tailwind CSS · Recharts   |
 | Backend  | FastAPI · Python 3.12 · `uv` · SQLAlchemy 2 · Alembic            |
 | Database | Postgres (Railway) — SQLite locally for a zero-setup demo        |
-| Model    | Anthropic Claude via the official SDK (`ANTHROPIC_API_KEY`)      |
+| Model    | **Kimi (Moonshot AI)** via the `openai` SDK pointed at `api.moonshot.ai` — Claude available behind `LLM_PROVIDER=claude` |
 | Deploy   | Vercel (web) · Railway (api + Postgres)                          |
 
 Repo layout:
@@ -78,7 +78,7 @@ You do **not** need Postgres or Docker locally — the app falls back to a SQLit
 
 ```bash
 git clone <repo> && cd dunning-iq
-cp .env.example .env          # optional: add ANTHROPIC_API_KEY for the live agent
+cp .env.example .env          # optional: add MOONSHOT_API_KEY for the live agent
 
 make install                  # uv sync + npm install
 make seed                     # migrate + seed a few hundred realistic accounts
@@ -87,7 +87,8 @@ make dev                      # api on :8000, web on :3000
 
 Open <http://localhost:3000>. The demo is fully clickable with **no API key** —
 seeded cases ship with real agent reasoning captured at seed time. Set
-`ANTHROPIC_API_KEY` to have the live engine process *new* simulated events.
+`MOONSHOT_API_KEY` (or set `LLM_PROVIDER=claude` + `ANTHROPIC_API_KEY`) to have
+the live engine process *new* simulated events.
 
 Fire a fresh batch of failures at the running API:
 
@@ -97,16 +98,21 @@ make simulate
 
 ## The agent (live vs. deterministic)
 
-The decision engine sits behind a single seam (`app/agent/engine.py → analyze()`):
+The decision engine sits behind a single seam (`app/agent/engine.py → analyze()`)
+and is **provider-pluggable** via the `LLM_PROVIDER` env var:
 
-- **Live** — with `ANTHROPIC_API_KEY` set, every *new* failed-payment event is
-  classified, planned, and drafted by **Claude (`claude-opus-4-8`)** via the
-  official SDK with structured output. Results are cached to disk, so re-runs are
-  free and offline.
+- **Live (Kimi — default)** — with `LLM_PROVIDER=kimi` (the default) and
+  `MOONSHOT_API_KEY` set, every *new* failed-payment event is classified,
+  planned, and drafted by **Kimi K2** (`kimi-k2-0711-preview`) via the
+  OpenAI-compatible Chat Completions API in JSON mode, with the response
+  validated against a Pydantic schema. Results are cached to disk, so re-runs
+  are free and offline.
+- **Live (Claude)** — set `LLM_PROVIDER=claude` and `ANTHROPIC_API_KEY` to route
+  through the Anthropic SDK with `messages.parse` and the same schema instead.
 - **Deterministic fallback** — with no key (or on any transient API error), the
   same seam produces the decision from a hand-written billing playbook, so the
   demo never breaks and webhooks are never dropped. Each decision records whether
-  it was `claude` or `replay`, surfaced in the audit trail.
+  it was `kimi`, `claude`, or `replay`, surfaced in the audit trail.
 
 Either way, the **hard billing guardrails** (never retry a stolen card, escalate
 fraud immediately, payday-aligned backoff) live in `app/agent/strategy.py` and
@@ -126,8 +132,13 @@ live agent runs on new events you fire with `make simulate`.
 | Var                        | Where      | Purpose                                                        |
 | -------------------------- | ---------- | -------------------------------------------------------------- |
 | `DATABASE_URL`             | api        | Postgres URL in prod; unset → local SQLite file. Accepts `postgres://`, `postgresql://`, or `postgresql+psycopg://` — all are normalised at startup. |
-| `ANTHROPIC_API_KEY`        | api        | Enables the live Claude agent; demo works without it           |
-| `AGENT_MODEL`              | api        | Claude model id (default `claude-opus-4-8`)                    |
+| `LLM_PROVIDER`             | api        | `kimi` (default) or `claude`                                   |
+| `MOONSHOT_API_KEY`         | api        | Enables the live **Kimi** agent (when `LLM_PROVIDER=kimi`)     |
+| `KIMI_MODEL`               | api        | Kimi model id (default `kimi-k2-0711-preview`)                 |
+| `KIMI_BASE_URL`            | api        | Moonshot endpoint (default `https://api.moonshot.ai/v1`)       |
+| `ANTHROPIC_API_KEY`        | api        | Enables the live **Claude** agent (when `LLM_PROVIDER=claude`) |
+| `CLAUDE_MODEL`             | api        | Claude model id (default `claude-opus-4-8`)                    |
+| `AGENT_MAX_TOKENS`         | api        | Per-decision output cap (default 1024)                         |
 | `WEBHOOK_SIGNING_SECRET`   | api        | Verifies inbound payment webhooks (enforced when set)          |
 | `CORS_ORIGINS`             | api        | Comma-separated allowed origins for the web app                |
 | `ENVIRONMENT`              | api        | `development` (default) or `production`                        |
@@ -154,6 +165,6 @@ Production hardening that ships with the code:
 ## Project status
 
 All seven milestones complete: **M0** scaffold · **M1** schema + story-driven
-seed · **M2** webhook + simulator · **M3** live Claude agent + reasoning log ·
+seed · **M2** webhook + simulator · **M3** live LLM agent (Kimi/Claude) + reasoning log ·
 **M4** dashboard / queue / case-detail UI · **M5** policy editor with live
 preview · **M6** case-study landing · **M7** deploy config + docs.

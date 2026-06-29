@@ -31,6 +31,8 @@ def health() -> dict[str, object]:
         "environment": settings.environment,
         "database": "sqlite" if settings.is_sqlite else "postgres",
         "agent_mode": "live" if settings.agent_live_enabled else "replay",
+        "llm_provider": settings.llm_provider,
+        "llm_model": settings.active_llm_model,
     }
 
 

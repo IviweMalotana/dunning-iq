@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { ArrowUpRight, Check, Mail, Sparkles } from "lucide-react";
 import { apiSend, swrFetcher } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, isLiveLLM } from "@/lib/utils";
 import { FAILURE_CODES, Policy, PolicyPreview, TONES } from "@/lib/types";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
@@ -278,9 +278,10 @@ function PreviewPane({
         <div className={cn("p-5 transition-opacity", loading && "opacity-60")}>
           <div className="flex flex-wrap items-center gap-2">
             <Pill tone="accent">{preview.failure_label}</Pill>
-            {preview.decided_by === "claude" && (
+            {isLiveLLM(preview.decided_by) && (
               <Pill tone="info" className="px-1.5 py-0">
-                <Sparkles className="h-2.5 w-2.5" /> Claude
+                <Sparkles className="h-2.5 w-2.5" />
+                {preview.decided_by === "kimi" ? "Kimi" : "Claude"}
               </Pill>
             )}
             <span className="text-xs text-ink-subtle">

@@ -177,7 +177,7 @@ export default async function CaseStudy() {
               right now. Scheduling 4 retries (+2d, +3d, +5d, +7d); the widening gaps straddle a
               likely pay date.
             </div>
-            <div className="mt-2 text-xs text-ink-subtle">96% confidence · decided by Claude</div>
+            <div className="mt-2 text-xs text-ink-subtle">96% confidence · decided by Kimi</div>
           </div>
         </div>
       </Section>
@@ -243,7 +243,7 @@ export default async function CaseStudy() {
             <span>Next.js 15</span>
             <span>FastAPI</span>
             <span>Postgres</span>
-            <span>Claude (Anthropic)</span>
+            <span>Kimi (Moonshot)</span>
           </span>
         </div>
       </section>

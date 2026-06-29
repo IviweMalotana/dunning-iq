@@ -37,8 +37,11 @@ Set these on the API service (Variables tab):
 | `DATABASE_URL`            | *(auto-injected by the Postgres plugin)*                       |
 | `ENVIRONMENT`             | `production`                                                   |
 | `CORS_ORIGINS`            | Your Vercel domain(s), comma-separated — see web setup below   |
-| `ANTHROPIC_API_KEY`       | Enables the live Claude agent. Optional but recommended.       |
-| `AGENT_MODEL`             | `claude-opus-4-8` (default)                                    |
+| `LLM_PROVIDER`            | `kimi` (default) or `claude` — which provider drives the agent |
+| `MOONSHOT_API_KEY`        | Enables the live **Kimi** agent (when `LLM_PROVIDER=kimi`)     |
+| `KIMI_MODEL`              | `kimi-k2-0711-preview` (default)                               |
+| `ANTHROPIC_API_KEY`       | Enables the live **Claude** agent (when `LLM_PROVIDER=claude`) |
+| `CLAUDE_MODEL`            | `claude-opus-4-8` (default)                                    |
 | `WEBHOOK_SIGNING_SECRET`  | Random 32+ char string — enforces HMAC verification in prod    |
 
 ### Seed the demo data
@@ -124,8 +127,12 @@ envelope shape the endpoint accepts.
 | `DATABASE_URL`             | api     | prod     | Postgres URL. Unset → local SQLite. Railway-style schemes auto-upgrade. |
 | `ENVIRONMENT`              | api     | no       | `development` (default) or `production`. Affects logging.               |
 | `CORS_ORIGINS`             | api     | yes      | Comma-separated allowed origins for the web app.                        |
-| `ANTHROPIC_API_KEY`        | api     | no       | Enables the live Claude agent; falls back to deterministic without.     |
-| `AGENT_MODEL`              | api     | no       | Claude model id (default `claude-opus-4-8`).                            |
+| `LLM_PROVIDER`             | api     | no       | `kimi` (default) or `claude` — picks the live LLM backend.              |
+| `MOONSHOT_API_KEY`         | api     | no       | Enables the live Kimi agent (when `LLM_PROVIDER=kimi`).                 |
+| `KIMI_MODEL`               | api     | no       | Kimi model id (default `kimi-k2-0711-preview`).                         |
+| `KIMI_BASE_URL`            | api     | no       | Moonshot API endpoint (default `https://api.moonshot.ai/v1`).           |
+| `ANTHROPIC_API_KEY`        | api     | no       | Enables the live Claude agent (when `LLM_PROVIDER=claude`).             |
+| `CLAUDE_MODEL`             | api     | no       | Claude model id (default `claude-opus-4-8`).                            |
 | `AGENT_MAX_TOKENS`         | api     | no       | Per-decision token cap (default 1024).                                  |
 | `WEBHOOK_SIGNING_SECRET`   | api     | prod     | HMAC key for inbound webhook verification.                              |
 | `NEXT_PUBLIC_API_BASE_URL` | web     | yes      | Base URL the frontend uses to reach the API.                            |
@@ -137,8 +144,9 @@ envelope shape the endpoint accepts.
 - **Railway** — the API + Postgres run comfortably on the Hobby plan.
 - **Vercel** — the Next.js app fits well within the free Hobby tier.
 - **Anthropic** — the live agent caches decisions to disk by default; demo seed
-  traffic is < $0.10 of Opus tokens. Set `ANTHROPIC_API_KEY` only when you want
-  *new* webhook events to be processed live.
+  traffic is negligible token spend. Set `MOONSHOT_API_KEY` (or
+  `ANTHROPIC_API_KEY` with `LLM_PROVIDER=claude`) only when you want *new*
+  webhook events to be processed live.
 
 ## Troubleshooting
 
@@ -150,4 +158,6 @@ envelope shape the endpoint accepts.
 - **The dashboard is empty** — you haven't seeded yet. Run
   `railway run python -m app.seed.run` once.
 - **Live agent isn't running** — check `/health` → `agent_mode`. If it says
-  `replay`, the `ANTHROPIC_API_KEY` env var isn't set on the API service.
+  `replay`, the key for the selected `LLM_PROVIDER` isn't set on the API service
+  (`MOONSHOT_API_KEY` for Kimi, `ANTHROPIC_API_KEY` for Claude). `/health` also
+  reports `llm_provider` and `llm_model` to confirm the routing.
