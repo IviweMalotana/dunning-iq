@@ -38,7 +38,7 @@ can audit exactly why it did what it did.
    event simulator  ──▶   │   /webhooks/payments  ─┐                  │
                           │                        ▼                  │
                           │                 Agent decision engine     │
-                          │       (Kimi · OpenAI-compatible JSON mode) │
+                          │           (Anthropic Claude, official SDK) │
                           │           classify → retry → draft → route │
                           │                        │                  │
                           │                        ▼                  │
@@ -61,7 +61,7 @@ can audit exactly why it did what it did.
 | Frontend | Next.js 15 (App Router) · TypeScript · Tailwind CSS · Recharts   |
 | Backend  | FastAPI · Python 3.12 · `uv` · SQLAlchemy 2 · Alembic            |
 | Database | Postgres (Railway) — SQLite locally for a zero-setup demo        |
-| Model    | **Kimi (Moonshot AI)** via the `openai` SDK pointed at `api.moonshot.ai` — Claude available behind `LLM_PROVIDER=claude` |
+| Model    | **Anthropic Claude** via the official SDK (`ANTHROPIC_API_KEY`) — Kimi available behind `LLM_PROVIDER=kimi` |
 | Deploy   | Vercel (web) · Railway (api + Postgres)                          |
 
 Repo layout:
@@ -78,7 +78,7 @@ You do **not** need Postgres or Docker locally — the app falls back to a SQLit
 
 ```bash
 git clone <repo> && cd dunning-iq
-cp .env.example .env          # optional: add MOONSHOT_API_KEY for the live agent
+cp .env.example .env          # optional: add ANTHROPIC_API_KEY for the live agent
 
 make install                  # uv sync + npm install
 make seed                     # migrate + seed a few hundred realistic accounts
@@ -87,7 +87,7 @@ make dev                      # api on :8000, web on :3000
 
 Open <http://localhost:3000>. The demo is fully clickable with **no API key** —
 seeded cases ship with real agent reasoning captured at seed time. Set
-`MOONSHOT_API_KEY` (or set `LLM_PROVIDER=claude` + `ANTHROPIC_API_KEY`) to have
+`ANTHROPIC_API_KEY` (or set `LLM_PROVIDER=kimi` + `MOONSHOT_API_KEY`) to have
 the live engine process *new* simulated events.
 
 Fire a fresh batch of failures at the running API:
@@ -101,18 +101,18 @@ make simulate
 The decision engine sits behind a single seam (`app/agent/engine.py → analyze()`)
 and is **provider-pluggable** via the `LLM_PROVIDER` env var:
 
-- **Live (Kimi — default)** — with `LLM_PROVIDER=kimi` (the default) and
-  `MOONSHOT_API_KEY` set, every *new* failed-payment event is classified,
-  planned, and drafted by **Kimi K2** (`kimi-k2-0711-preview`) via the
-  OpenAI-compatible Chat Completions API in JSON mode, with the response
-  validated against a Pydantic schema. Results are cached to disk, so re-runs
-  are free and offline.
-- **Live (Claude)** — set `LLM_PROVIDER=claude` and `ANTHROPIC_API_KEY` to route
-  through the Anthropic SDK with `messages.parse` and the same schema instead.
+- **Live (Claude — default)** — with `LLM_PROVIDER=claude` (the default) and
+  `ANTHROPIC_API_KEY` set, every *new* failed-payment event is classified,
+  planned, and drafted by **Claude (`claude-opus-4-8`)** via the official
+  Anthropic SDK with `messages.parse` and a Pydantic schema. Results are
+  cached to disk, so re-runs are free and offline.
+- **Live (Kimi)** — set `LLM_PROVIDER=kimi` and `MOONSHOT_API_KEY` to route
+  through Kimi K2 (`kimi-k2-0711-preview`) via the OpenAI-compatible Chat
+  Completions API in JSON mode against the same schema.
 - **Deterministic fallback** — with no key (or on any transient API error), the
   same seam produces the decision from a hand-written billing playbook, so the
   demo never breaks and webhooks are never dropped. Each decision records whether
-  it was `kimi`, `claude`, or `replay`, surfaced in the audit trail.
+  it was `claude`, `kimi`, or `replay`, surfaced in the audit trail.
 
 Either way, the **hard billing guardrails** (never retry a stolen card, escalate
 fraud immediately, payday-aligned backoff) live in `app/agent/strategy.py` and
@@ -132,12 +132,12 @@ live agent runs on new events you fire with `make simulate`.
 | Var                        | Where      | Purpose                                                        |
 | -------------------------- | ---------- | -------------------------------------------------------------- |
 | `DATABASE_URL`             | api        | Postgres URL in prod; unset → local SQLite file. Accepts `postgres://`, `postgresql://`, or `postgresql+psycopg://` — all are normalised at startup. |
-| `LLM_PROVIDER`             | api        | `kimi` (default) or `claude`                                   |
+| `LLM_PROVIDER`             | api        | `claude` (default) or `kimi`                                   |
+| `ANTHROPIC_API_KEY`        | api        | Enables the live **Claude** agent (when `LLM_PROVIDER=claude`) |
+| `CLAUDE_MODEL`             | api        | Claude model id (default `claude-opus-4-8`)                    |
 | `MOONSHOT_API_KEY`         | api        | Enables the live **Kimi** agent (when `LLM_PROVIDER=kimi`)     |
 | `KIMI_MODEL`               | api        | Kimi model id (default `kimi-k2-0711-preview`)                 |
 | `KIMI_BASE_URL`            | api        | Moonshot endpoint (default `https://api.moonshot.ai/v1`)       |
-| `ANTHROPIC_API_KEY`        | api        | Enables the live **Claude** agent (when `LLM_PROVIDER=claude`) |
-| `CLAUDE_MODEL`             | api        | Claude model id (default `claude-opus-4-8`)                    |
 | `AGENT_MAX_TOKENS`         | api        | Per-decision output cap (default 1024)                         |
 | `WEBHOOK_SIGNING_SECRET`   | api        | Verifies inbound payment webhooks (enforced when set)          |
 | `CORS_ORIGINS`             | api        | Comma-separated allowed origins for the web app                |

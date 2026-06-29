@@ -37,11 +37,11 @@ Set these on the API service (Variables tab):
 | `DATABASE_URL`            | *(auto-injected by the Postgres plugin)*                       |
 | `ENVIRONMENT`             | `production`                                                   |
 | `CORS_ORIGINS`            | Your Vercel domain(s), comma-separated — see web setup below   |
-| `LLM_PROVIDER`            | `kimi` (default) or `claude` — which provider drives the agent |
-| `MOONSHOT_API_KEY`        | Enables the live **Kimi** agent (when `LLM_PROVIDER=kimi`)     |
-| `KIMI_MODEL`              | `kimi-k2-0711-preview` (default)                               |
+| `LLM_PROVIDER`            | `claude` (default) or `kimi` — which provider drives the agent |
 | `ANTHROPIC_API_KEY`       | Enables the live **Claude** agent (when `LLM_PROVIDER=claude`) |
 | `CLAUDE_MODEL`            | `claude-opus-4-8` (default)                                    |
+| `MOONSHOT_API_KEY`        | Enables the live **Kimi** agent (when `LLM_PROVIDER=kimi`)     |
+| `KIMI_MODEL`              | `kimi-k2-0711-preview` (default)                               |
 | `WEBHOOK_SIGNING_SECRET`  | Random 32+ char string — enforces HMAC verification in prod    |
 
 ### Seed the demo data
@@ -127,12 +127,12 @@ envelope shape the endpoint accepts.
 | `DATABASE_URL`             | api     | prod     | Postgres URL. Unset → local SQLite. Railway-style schemes auto-upgrade. |
 | `ENVIRONMENT`              | api     | no       | `development` (default) or `production`. Affects logging.               |
 | `CORS_ORIGINS`             | api     | yes      | Comma-separated allowed origins for the web app.                        |
-| `LLM_PROVIDER`             | api     | no       | `kimi` (default) or `claude` — picks the live LLM backend.              |
+| `LLM_PROVIDER`             | api     | no       | `claude` (default) or `kimi` — picks the live LLM backend.              |
+| `ANTHROPIC_API_KEY`        | api     | no       | Enables the live Claude agent (when `LLM_PROVIDER=claude`).             |
+| `CLAUDE_MODEL`             | api     | no       | Claude model id (default `claude-opus-4-8`).                            |
 | `MOONSHOT_API_KEY`         | api     | no       | Enables the live Kimi agent (when `LLM_PROVIDER=kimi`).                 |
 | `KIMI_MODEL`               | api     | no       | Kimi model id (default `kimi-k2-0711-preview`).                         |
 | `KIMI_BASE_URL`            | api     | no       | Moonshot API endpoint (default `https://api.moonshot.ai/v1`).           |
-| `ANTHROPIC_API_KEY`        | api     | no       | Enables the live Claude agent (when `LLM_PROVIDER=claude`).             |
-| `CLAUDE_MODEL`             | api     | no       | Claude model id (default `claude-opus-4-8`).                            |
 | `AGENT_MAX_TOKENS`         | api     | no       | Per-decision token cap (default 1024).                                  |
 | `WEBHOOK_SIGNING_SECRET`   | api     | prod     | HMAC key for inbound webhook verification.                              |
 | `NEXT_PUBLIC_API_BASE_URL` | web     | yes      | Base URL the frontend uses to reach the API.                            |

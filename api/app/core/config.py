@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # --- LLM provider ---
     # The decision engine routes through this provider when its key is set;
     # otherwise it falls back to the deterministic billing playbook.
-    llm_provider: str = "kimi"            # "kimi" | "claude"
+    llm_provider: str = "claude"          # "claude" | "kimi"
     agent_max_tokens: int = 1024
 
     # Kimi (Moonshot AI) — OpenAI-compatible API.
