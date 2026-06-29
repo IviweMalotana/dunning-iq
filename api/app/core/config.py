@@ -11,6 +11,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Repo-root .env (one level up from /api) and /api/.env are both honoured.
@@ -47,6 +48,24 @@ class Settings(BaseSettings):
     # --- Webhooks ---
     # Optional shared secret for verifying inbound payment webhooks.
     webhook_signing_secret: str | None = None
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalise_database_url(cls, v: str) -> str:
+        """Accept Railway/Heroku-style ``postgres[ql]://`` and upgrade to psycopg3.
+
+        SQLAlchemy 2 requires an explicit driver. Most managed Postgres providers
+        hand out URLs without one (``postgresql://...``), which raises
+        ``NoSuchModuleError: postgres`` at engine creation. Normalising here means
+        you can paste the provider's URL verbatim into the env var.
+        """
+        if not v or v.startswith("sqlite"):
+            return v
+        if v.startswith("postgres://"):
+            v = "postgresql://" + v[len("postgres://"):]
+        if v.startswith("postgresql://"):
+            v = "postgresql+psycopg://" + v[len("postgresql://"):]
+        return v
 
     @property
     def cors_origin_list(self) -> list[str]:

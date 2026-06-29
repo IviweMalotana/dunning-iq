@@ -123,19 +123,35 @@ live agent runs on new events you fire with `make simulate`.
 
 | Var                        | Where      | Purpose                                                        |
 | -------------------------- | ---------- | -------------------------------------------------------------- |
-| `DATABASE_URL`             | api        | Postgres URL in prod; unset → local SQLite file                |
+| `DATABASE_URL`             | api        | Postgres URL in prod; unset → local SQLite file. Accepts `postgres://`, `postgresql://`, or `postgresql+psycopg://` — all are normalised at startup. |
 | `ANTHROPIC_API_KEY`        | api        | Enables the live Claude agent; demo works without it           |
 | `AGENT_MODEL`              | api        | Claude model id (default `claude-opus-4-8`)                    |
-| `WEBHOOK_SIGNING_SECRET`   | api        | Verifies inbound payment webhooks                              |
+| `WEBHOOK_SIGNING_SECRET`   | api        | Verifies inbound payment webhooks (enforced when set)          |
 | `CORS_ORIGINS`             | api        | Comma-separated allowed origins for the web app                |
+| `ENVIRONMENT`              | api        | `development` (default) or `production`                        |
 | `NEXT_PUBLIC_API_BASE_URL` | web        | Base URL the frontend uses to reach the API                    |
 
 ## Deploy
 
-Vercel (web) + Railway (api + Postgres) — full instructions land in milestone 7.
+Two services: **Railway** runs the FastAPI API + managed Postgres; **Vercel**
+runs the Next.js web app. Both deploy from this repo's `/api` and `/web`
+directories respectively. The full runbook — Railway start command, Postgres
+linking, seed step, CORS, env-var reference, webhook signing, troubleshooting —
+is in [**`DEPLOY.md`**](./DEPLOY.md).
+
+Production hardening that ships with the code:
+
+- **Railway-style `DATABASE_URL`** (`postgres://…`, `postgresql://…`) is
+  auto-upgraded to `postgresql+psycopg://…` at startup, so the value Railway
+  hands you works verbatim.
+- **`railway.toml`** runs `alembic upgrade head` before booting uvicorn — every
+  deploy migrates the DB before serving traffic.
+- **Webhook HMAC verification** kicks in automatically once
+  `WEBHOOK_SIGNING_SECRET` is set.
 
 ## Project status
 
-Built in milestones: **M0** scaffold ✅ · M1 schema + seed · M2 webhook + simulator
-· M3 agent engine + reasoning log · M4 dashboard/queue/case-detail UI · M5 settings
-· M6 case-study landing · M7 deploy notes.
+All seven milestones complete: **M0** scaffold · **M1** schema + story-driven
+seed · **M2** webhook + simulator · **M3** live Claude agent + reasoning log ·
+**M4** dashboard / queue / case-detail UI · **M5** policy editor with live
+preview · **M6** case-study landing · **M7** deploy config + docs.
