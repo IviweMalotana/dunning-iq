@@ -103,7 +103,7 @@ and is **provider-pluggable** via the `LLM_PROVIDER` env var:
 
 - **Live (Claude — default)** — with `LLM_PROVIDER=claude` (the default) and
   `ANTHROPIC_API_KEY` set, every *new* failed-payment event is classified,
-  planned, and drafted by **Claude (`claude-opus-4-8`)** via the official
+  planned, and drafted by **Claude (`claude-haiku-4-5`)** via the official
   Anthropic SDK with `messages.parse` and a Pydantic schema. Results are
   cached to disk, so re-runs are free and offline.
 - **Live (Kimi)** — set `LLM_PROVIDER=kimi` and `MOONSHOT_API_KEY` to route
@@ -134,7 +134,7 @@ live agent runs on new events you fire with `make simulate`.
 | `DATABASE_URL`             | api        | Postgres URL in prod; unset → local SQLite file. Accepts `postgres://`, `postgresql://`, or `postgresql+psycopg://` — all are normalised at startup. |
 | `LLM_PROVIDER`             | api        | `claude` (default) or `kimi`                                   |
 | `ANTHROPIC_API_KEY`        | api        | Enables the live **Claude** agent (when `LLM_PROVIDER=claude`) |
-| `CLAUDE_MODEL`             | api        | Claude model id (default `claude-opus-4-8`)                    |
+| `CLAUDE_MODEL`             | api        | Claude model id (default `claude-haiku-4-5`)                   |
 | `MOONSHOT_API_KEY`         | api        | Enables the live **Kimi** agent (when `LLM_PROVIDER=kimi`)     |
 | `KIMI_MODEL`               | api        | Kimi model id (default `kimi-k2-0711-preview`)                 |
 | `KIMI_BASE_URL`            | api        | Moonshot endpoint (default `https://api.moonshot.ai/v1`)       |

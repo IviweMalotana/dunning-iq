@@ -50,9 +50,11 @@ class Settings(BaseSettings):
     kimi_model: str = "kimi-k2-0711-preview"
     kimi_base_url: str = "https://api.moonshot.ai/v1"
 
-    # Anthropic Claude — kept available behind LLM_PROVIDER=claude.
+    # Anthropic Claude — default provider. Haiku 4.5 is the cheapest current
+    # Claude model ($1/$5 per MTok) and supports structured output via
+    # messages.parse — well-suited to a portfolio demo with predictable cost.
     anthropic_api_key: str | None = None
-    claude_model: str = "claude-opus-4-8"
+    claude_model: str = "claude-haiku-4-5"
 
     # --- Webhooks ---
     # Optional shared secret for verifying inbound payment webhooks.

@@ -1,0 +1,76 @@
+name: Deploy
+
+# Auto-deploys both services on every push to main.
+#   API  → Railway via `railway up` (uses railway.toml in /api).
+#   Web  → Vercel via `vercel deploy --prod` (uses vercel.json in /web).
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   RAILWAY_TOKEN       — Railway → Account Settings → Tokens → New Token
+#   RAILWAY_SERVICE     — name of the API service in your Railway project (e.g. "dunning-api")
+#   VERCEL_TOKEN        — Vercel  → Settings → Tokens → Create
+#   VERCEL_ORG_ID       — Vercel  → Settings → General → "Your ID"
+#   VERCEL_PROJECT_ID   — Vercel project → Settings → General → "Project ID"
+#
+# CI (lint/test/typecheck/build) still runs from `.github/workflows/ci.yml`
+# on every PR. This workflow only runs on direct pushes to `main`, so a green
+# CI on the PR is the gate; merging is what triggers the deploy.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  api:
+    name: API → Railway
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.com/install.sh | sh
+          echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
+
+      - name: Deploy API
+        working-directory: api
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service "${{ secrets.RAILWAY_SERVICE }}" --ci
+
+  web:
+    name: Web → Vercel
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel project config
+        working-directory: web
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        working-directory: web
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        working-directory: web
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
